@@ -9,7 +9,7 @@ Phone-Free 2FA is developed by computer scientists at the University of Oxford (
 ⚙️ **How it works**
 Two-factor authentication (2FA) makes digital life much more secure — a hacker can't get in with your password alone. Phone-Free 2FA is an authenticator that uses the most common method: time-based one-time passwords (TOTP). You add a 2FA secret key from any service that supports TOTP (e.g. a university Microsoft account). Phone-Free 2FA encrypts it locally and generates a fresh 6-digit login code every 30 seconds.
 
-All data is stored locally in encrypted form in the browser using the extension storage API. Nothing is sent over the network. The code is fully open-source — you can find it at https://github.com/ulyngs/redd-phone-free-2fa
+All data is stored locally in encrypted form in the browser using the extension storage API. Nothing is sent over the network. The code is fully open-source — you can find it at https://github.com/ulyngs/phone-free-2fa
 
 Secret keys are encrypted with AES-256-GCM, using a master passphrase that is key-derived via PBKDF2 with 600,000 iterations. The extension auto-locks after configurable inactivity (or immediately when you close the sidebar) and clears copied codes from the clipboard after 30 seconds. Failed unlock attempts trigger progressive lockout to deter guessing.
 

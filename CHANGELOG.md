@@ -146,8 +146,8 @@ Pushing a `v*` tag triggers [`.github/workflows/release.yml`](.github/workflows/
 - Configurable auto-lock timeout and clipboard auto-clear after 30 seconds.
 - Zero-dependency implementation using Web Crypto API only.
 
-[2.6]: https://github.com/ulyngs/redd-phone-free-2fa/releases/tag/v2.6
-[2.5]: https://github.com/ulyngs/redd-phone-free-2fa/releases/tag/v2.5
-[2.4]: https://github.com/ulyngs/redd-phone-free-2fa/releases/tag/v2.4
-[2.3]: https://github.com/ulyngs/redd-phone-free-2fa/releases/tag/v2.3
-[2.2]: https://github.com/ulyngs/redd-phone-free-2fa/releases/tag/v2.2
+[2.6]: https://github.com/ulyngs/phone-free-2fa/releases/tag/v2.6
+[2.5]: https://github.com/ulyngs/phone-free-2fa/releases/tag/v2.5
+[2.4]: https://github.com/ulyngs/phone-free-2fa/releases/tag/v2.4
+[2.3]: https://github.com/ulyngs/phone-free-2fa/releases/tag/v2.3
+[2.2]: https://github.com/ulyngs/phone-free-2fa/releases/tag/v2.2
