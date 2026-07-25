@@ -64,3 +64,35 @@ jobs:
           name: "v${{ steps.meta.outputs.version }} — Phone-Free 2FA"
           body_path: release-notes.md
           files: ${{ steps.meta.outputs.zip_name }}
+
+      # Submits the zip to the Chrome Web Store and Firefox Add-ons for review.
+      # Skips any store whose credentials are not configured as repo secrets,
+      # so releases keep working before (or without) store automation.
+      - name: Submit to stores
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+        run: |
+          set -euo pipefail
+          ZIP="${{ steps.meta.outputs.zip_name }}"
+          ARGS=()
+          if [ -n "${CHROME_REFRESH_TOKEN}" ]; then
+            ARGS+=(--chrome-zip "$ZIP")
+          else
+            echo "Chrome credentials not configured - skipping Chrome Web Store."
+          fi
+          if [ -n "${FIREFOX_JWT_SECRET}" ]; then
+            ARGS+=(--firefox-zip "$ZIP")
+          else
+            echo "Firefox credentials not configured - skipping Firefox Add-ons."
+          fi
+          if [ ${#ARGS[@]} -eq 0 ]; then
+            echo "No store credentials configured - skipping submission entirely."
+            exit 0
+          fi
+          npx publish-browser-extension@5.1.0 "${ARGS[@]}"
