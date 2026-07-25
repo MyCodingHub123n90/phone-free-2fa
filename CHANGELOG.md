@@ -14,7 +14,7 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 Pushing a `v*` tag triggers [`.github/workflows/release.yml`](.github/workflows/release.yml), which checks the tag matches `manifest.json`, builds `phone-free-2fa-redd-vX.Y.zip`, and publishes a GitHub Release with that zip attached.
 
-## [2.6] - 2026-07-24
+## [2.6] - 2026-07-25
 
 ### Added
 
@@ -22,6 +22,7 @@ Pushing a `v*` tag triggers [`.github/workflows/release.yml`](.github/workflows/
 
 ### Changed
 
+- New app logo: phone with strike-through, background-free at all icon sizes (design sources in `assets/logo/`).
 - Shortened the product name from **Phone-Free 2FA by ReDD** to **Phone-Free 2FA** across the manifest, UI, docs, and store copy.
 
 ## [2.5] - 2026-07-20
