@@ -25,7 +25,7 @@ jobs:
             exit 1
           fi
           echo "version=${MANIFEST_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "zip_name=phone-free-2fa-redd-v${MANIFEST_VERSION}.zip" >> "$GITHUB_OUTPUT"
+          echo "zip_name=phone-free-2fa-v${MANIFEST_VERSION}.zip" >> "$GITHUB_OUTPUT"
 
       - name: Build extension zip
         run: |
@@ -53,7 +53,7 @@ jobs:
             echo "---"
             echo ""
             echo "### Install"
-            echo "Download \`phone-free-2fa-redd-v${VERSION}.zip\` below for Chrome Web Store, Firefox Add-ons, or sideloading."
+            echo "Download \`phone-free-2fa-v${VERSION}.zip\` below for Chrome Web Store, Firefox Add-ons, or sideloading."
             echo ""
             echo "**Full changelog:** https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md"
           } > release-notes.md
@@ -70,10 +70,14 @@ jobs:
       # so releases keep working before (or without) store automation.
       - name: Submit to stores
         env:
+          # Chrome Web Store API v2 authenticates with a Google Cloud service
+          # account (the v1.1 OAuth client + refresh token flow shuts down
+          # October 15th, 2026).
+          CHROME_API_VERSION: v2
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL: ${{ secrets.CHROME_SERVICE_ACCOUNT_CLIENT_EMAIL }}
+          CHROME_SERVICE_ACCOUNT_PRIVATE_KEY: ${{ secrets.CHROME_SERVICE_ACCOUNT_PRIVATE_KEY }}
           FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
           FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
           FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
@@ -81,7 +85,7 @@ jobs:
           set -euo pipefail
           ZIP="${{ steps.meta.outputs.zip_name }}"
           ARGS=()
-          if [ -n "${CHROME_REFRESH_TOKEN}" ]; then
+          if [ -n "${CHROME_SERVICE_ACCOUNT_PRIVATE_KEY}" ]; then
             ARGS+=(--chrome-zip "$ZIP")
           else
             echo "Chrome credentials not configured - skipping Chrome Web Store."

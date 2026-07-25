@@ -1,4 +1,9 @@
 .DS_Store
+
+# Store-publishing credentials (created by publish-browser-extension init)
+.env
+.env.submit
+.env.submit.backup-*
 *.xcuserstate
 xcuserdata/
 DerivedData/
