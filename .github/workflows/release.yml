@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - 'v*'
+  # Manual trigger from the Actions tab: releases the version currently in
+  # src/manifest.json and creates the v<version> tag automatically.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,18 +17,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify tag matches manifest version
+      - name: Determine release version
         id: meta
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME#v}"
           MANIFEST_VERSION=$(jq -r .version src/manifest.json)
-          if [ "$TAG" != "$MANIFEST_VERSION" ]; then
-            echo "::error::Tag v${TAG} does not match src/manifest.json version ${MANIFEST_VERSION}"
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            TAG="${GITHUB_REF_NAME#v}"
+            if [ "$TAG" != "$MANIFEST_VERSION" ]; then
+              echo "::error::Tag v${TAG} does not match src/manifest.json version ${MANIFEST_VERSION}"
+              exit 1
+            fi
+          elif gh release view "v${MANIFEST_VERSION}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "::error::Release v${MANIFEST_VERSION} already exists - bump src/manifest.json first"
             exit 1
           fi
           echo "version=${MANIFEST_VERSION}" >> "$GITHUB_OUTPUT"
           echo "zip_name=phone-free-2fa-v${MANIFEST_VERSION}.zip" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Build extension zip
         run: |
@@ -61,6 +71,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.meta.outputs.version }}
           name: "v${{ steps.meta.outputs.version }} — Phone-Free 2FA"
           body_path: release-notes.md
           files: ${{ steps.meta.outputs.zip_name }}
@@ -100,3 +111,60 @@ jobs:
             exit 0
           fi
           npx publish-browser-extension@5.1.0 "${ARGS[@]}"
+
+      # Copies this version's CHANGELOG.md section onto the AMO version as
+      # release notes (publish-browser-extension can't set them). Chrome has
+      # no equivalent field. Non-fatal: a failure here shouldn't undo an
+      # otherwise successful release.
+      - name: Update Firefox release notes
+        continue-on-error: true
+        env:
+          FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
+          FIREFOX_JWT_ISSUER: ${{ secrets.FIREFOX_JWT_ISSUER }}
+          FIREFOX_JWT_SECRET: ${{ secrets.FIREFOX_JWT_SECRET }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${FIREFOX_JWT_SECRET}" ]; then
+            echo "Firefox credentials not configured - skipping release notes."
+            exit 0
+          fi
+          node <<'EOF'
+          const crypto = require('node:crypto');
+          const fs = require('node:fs');
+
+          const notes = fs.readFileSync('/tmp/changelog-section.md', 'utf8').trim();
+          if (!notes) {
+            console.log('Changelog section is empty - nothing to publish.');
+            process.exit(0);
+          }
+
+          const b64 = (s) => Buffer.from(s).toString('base64url');
+          const iat = Math.floor(Date.now() / 1000);
+          const payload = { iss: process.env.FIREFOX_JWT_ISSUER, jti: crypto.randomUUID(), iat, exp: iat + 300 };
+          const unsigned = `${b64(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))}.${b64(JSON.stringify(payload))}`;
+          const signature = crypto.createHmac('sha256', process.env.FIREFOX_JWT_SECRET).update(unsigned).digest('base64url');
+          const headers = { Authorization: `JWT ${unsigned}.${signature}`, 'Content-Type': 'application/json' };
+          const base = `https://addons.mozilla.org/api/v5/addons/addon/${encodeURIComponent(process.env.FIREFOX_EXTENSION_ID)}`;
+
+          const main = async () => {
+            const list = await fetch(`${base}/versions/?filter=all_with_unlisted`, { headers });
+            if (!list.ok) throw new Error(`Listing versions failed: ${list.status} ${await list.text()}`);
+            const { results } = await list.json();
+            const version = results.find((v) => v.version === process.env.VERSION);
+            if (!version) throw new Error(`Version ${process.env.VERSION} not found on AMO`);
+
+            const patch = await fetch(`${base}/versions/${version.id}/`, {
+              method: 'PATCH',
+              headers,
+              body: JSON.stringify({ release_notes: { 'en-US': notes } }),
+            });
+            if (!patch.ok) throw new Error(`Updating release notes failed: ${patch.status} ${await patch.text()}`);
+            console.log(`Release notes set for Firefox version ${process.env.VERSION}.`);
+          };
+
+          main().catch((err) => {
+            console.error(err);
+            process.exit(1);
+          });
+          EOF
