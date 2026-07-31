@@ -7,6 +7,11 @@ on:
   # Manual trigger from the Actions tab: releases the version currently in
   # src/manifest.json and creates the v<version> tag automatically.
   workflow_dispatch:
+    inputs:
+      submit_to_stores:
+        description: Submit the zip to Chrome Web Store and Firefox Add-ons after creating the GitHub Release
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -79,7 +84,12 @@ jobs:
       # Submits the zip to the Chrome Web Store and Firefox Add-ons for review.
       # Skips any store whose credentials are not configured as repo secrets,
       # so releases keep working before (or without) store automation.
+      # Tag pushes always submit; manual runs use the submit_to_stores checkbox
+      # (default: true) so a GitHub-only transparency release is opt-out.
       - name: Submit to stores
+        if: >-
+          (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
+          (github.event_name == 'workflow_dispatch' && inputs.submit_to_stores)
         env:
           # Chrome Web Store API v2 authenticates with a Google Cloud service
           # account (the v1.1 OAuth client + refresh token flow shuts down
@@ -117,6 +127,9 @@ jobs:
       # no equivalent field. Non-fatal: a failure here shouldn't undo an
       # otherwise successful release.
       - name: Update Firefox release notes
+        if: >-
+          (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
+          (github.event_name == 'workflow_dispatch' && inputs.submit_to_stores)
         continue-on-error: true
         env:
           FIREFOX_EXTENSION_ID: ${{ secrets.FIREFOX_EXTENSION_ID }}
