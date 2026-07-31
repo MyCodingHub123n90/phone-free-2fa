@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Phone-Free 2FA",
+    "name": "Digital Habits: Phone-Free 2FA",
     "description": "Open-source, local-only authenticator for time-based one-time passwords (TOTP).",
     "version": "2.7",
     "icons": {
@@ -20,7 +20,7 @@
     },
     "sidebar_action": {
         "default_panel": "popup.html",
-        "default_title": "Phone-Free 2FA",
+        "default_title": "Digital Habits: Phone-Free 2FA",
         "default_icon": {
             "16": "icons/icon-16.png",
             "32": "icons/icon-32.png",
