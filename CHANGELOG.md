@@ -14,6 +14,14 @@ and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 Pushing a `v*` tag triggers [`.github/workflows/release.yml`](.github/workflows/release.yml), which checks the tag matches `manifest.json`, builds `phone-free-2fa-redd-vX.Y.zip`, and publishes a GitHub Release with that zip attached.
 
+## [2.8] - 2026-07-31
+
+### Changed
+
+- **Meet Digital Habits: Phone-Free 2FA!** Renamed from **Phone-Free 2FA** as
+  part of the move from the Reduce Digital Distraction (ReDD) Project to
+  **Centre for Digital Habits** ([digitalhabits.org](https://digitalhabits.org)).
+
 ## [2.7] - 2026-07-25
 
 ### Changed
